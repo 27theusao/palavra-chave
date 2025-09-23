@@ -9,11 +9,20 @@ function mostraPalavrasChave() {
     const campoResultado = document.querySelector('#resultado-palavrachave');
     const palavrasChave = processaTexto(texto);
 
-    campoResultado.textContent = palavrasChave.join(", ");
+    // Limpa o conteúdo anterior
+    campoResultado.innerHTML = ''; 
+
+    // Cria e adiciona um elemento <span> para cada palavra-chave
+    palavrasChave.forEach(palavra => {
+        const span = document.createElement('span');
+        span.textContent = palavra;
+        span.classList.add('palavra-destaque'); // Adiciona a classe CSS para estilização
+        campoResultado.appendChild(span);
+    });
 }
 
 function processaTexto(texto) {
-    let palavras = texto.split(/\P{L}+/u);
+    let palavras = texto.split(/[^\p{L}\p{N}]+/u); 
 
     for (let i in palavras) {
         palavras[i] = palavras[i].toLowerCase();

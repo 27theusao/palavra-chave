@@ -75,6 +75,8 @@ h1 {
 
 #resultado-palavrachave {
     display: flex;
+    flex-wrap: wrap; 
+    gap: 1.5rem; 
     border-radius: 0.625rem;
     align-self: stretch;
     color: var(--cor-destaque);
@@ -84,4 +86,14 @@ h1 {
     max-width: 100%;
     max-height: 50vh;
     overflow: auto;
+}
+
+.palavra-destaque {
+    background-color: var(--cor-destaque);
+    color: white; 
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 1.8rem;
+    font-weight: 600;
+    white-space: nowrap; 
 }
