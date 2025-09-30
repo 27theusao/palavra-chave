@@ -1,64 +1,85 @@
-import { PALAVRAS_RUINS } from "./palavrasRuins.js";
+/**
+ * Filtra palavras comuns (stop words) em português.
+ */
+const stopWords = new Set([
+    'a', 'o', 'as', 'os', 'um', 'uma', 'uns', 'umas',
+    'de', 'do', 'da', 'dos', 'das', 'em', 'no', 'na', 'nos', 'nas',
+    'por', 'pelo', 'pela', 'pelos', 'pelas', 'e', 'ou', 'mas', 
+    'porque', 'que', 'se', 'é', 'para', 'com', 'sem', 'mais', 'menos', 
+    'isso', 'este', 'esta', 'isto', 'aquele', 'aquela', 'aquilo',
+    'meu', 'minha', 'teu', 'tua', 'seu', 'sua', 'nosso', 'nossa',
+    'quem', 'onde', 'como', 'quando', 'qual', 'todo', 'toda', 'também',
+    'ser', 'estar', 'ter', 'fazer', 'dizer', 'ir', 'vir', 'dar', 'ver',
+    'dele', 'dela', 'nele', 'nela', 'ele', 'ela', 'nós', 'vós', 'eles', 'elas',
+]);
 
-const botaoMostraPalavras = document.querySelector('#botao-palavrachave');
+/**
+ * Função principal para extrair palavras-chave de um texto.
+ */
+function extractKeywords(text, topN = 10) {
+    if (!text) return [];
 
-botaoMostraPalavras.addEventListener('click', mostraPalavrasChave);
+    // 1. Limpar e tokenizar o texto
+    const cleanText = text
+        .toLowerCase()
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()0-9]/g, "")
+        .replace(/\s{2,}/g, " ");
 
-function mostraPalavrasChave() {
-    const texto = document.querySelector('#entrada-de-texto').value;
-    const campoResultado = document.querySelector('#resultado-palavrachave');
-    const palavrasChave = processaTexto(texto);
+    const words = cleanText.split(/\s+/);
 
-    // Limpa o conteúdo anterior
-    campoResultado.innerHTML = ''; 
-
-    // Cria e adiciona um elemento <span> para cada palavra-chave
-    palavrasChave.forEach(palavra => {
-        const span = document.createElement('span');
-        span.textContent = palavra;
-        span.classList.add('palavra-destaque'); // Adiciona a classe CSS para estilização
-        campoResultado.appendChild(span);
+    // 2. Contar a frequência das palavras (ignorando stop words)
+    const wordFrequency = new Map();
+    words.forEach(word => {
+        if (word.length > 2 && !stopWords.has(word)) {
+            wordFrequency.set(word, (wordFrequency.get(word) || 0) + 1);
+        }
     });
+
+    // 3. Classificar e retornar as N palavras mais frequentes
+    const sortedWords = Array.from(wordFrequency.entries())
+        .sort((a, b) => b[1] - a[1]);
+
+    // Retorna apenas a palavra (índice 0)
+    return sortedWords.slice(0, topN).map(item => item[0]);
 }
 
-function processaTexto(texto) {
-    let palavras = texto.split(/[^\p{L}\p{N}]+/u); 
+// ----------------------------------------------------
+// Lógica de manipulação do DOM
+// ----------------------------------------------------
 
-    for (let i in palavras) {
-        palavras[i] = palavras[i].toLowerCase();
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    // É uma boa prática adicionar 'async' ao botão para evitar cliques múltiplos
+    const textInput = document.getElementById('entrada-de-texto');
+    const extractButton = document.getElementById('botao-palavrachave');
+    const resultDiv = document.getElementById('resultado-palavrachave');
 
-    palavras = tiraPalavrasRuins(palavras);
+    extractButton.addEventListener('click', () => {
+        const text = textInput.value.trim();
 
-    const frequencias = contaFrequencias(palavras);
-    let ordenadas = Object.keys(frequencias).sort(ordenaPalavra);
+        if (text.length === 0) {
+            resultDiv.innerHTML = "<strong>Resultado:</strong> Por favor, insira algum texto para extrair.";
+            return;
+        }
 
-    function ordenaPalavra(p1, p2) {
-        return frequencias[p2] - frequencias[p1];
-    }
+        extractButton.disabled = true; // Desabilita o botão para evitar reenvios
+        extractButton.textContent = "Extraindo...";
 
-    return ordenadas.slice(0, 10);
-}
+        // Pequeno timeout para simular um processamento e mostrar o "Extraindo..."
+        setTimeout(() => {
+            const keywords = extractKeywords(text, 10);
 
-function contaFrequencias(palavras) {
-    let frequencias = {};
-    for (let i of palavras) {
-        frequencias[i] = 0;
-        for (let j of palavras) {
-            if (i == j) {
-                frequencias[i]++;
+            if (keywords.length > 0) {
+                const resultHtml = `
+                    <strong>Palavras-Chave Encontradas:</strong>
+                    ${keywords.join(' | ')}
+                `;
+                resultDiv.innerHTML = resultHtml;
+            } else {
+                resultDiv.innerHTML = "<strong>Resultado:</strong> Não foi possível extrair palavras-chave relevantes.";
             }
-        }
-    }
-    return frequencias;
-}
 
-function tiraPalavrasRuins(palavras) {
-    const palavrasBoas = [];
-    for (let palavra of palavras) {
-        if (!PALAVRAS_RUINS.has(palavra) && palavra.length > 2) {
-            palavrasBoas.push(palavra);
-        }
-    }
-    return palavrasBoas;
-}
+            extractButton.disabled = false;
+            extractButton.textContent = "Extrair";
+        }, 300); // 300ms de "processamento" simulado
+    });
+});
